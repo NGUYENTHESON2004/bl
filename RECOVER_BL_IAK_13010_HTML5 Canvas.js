@@ -28729,6 +28729,9 @@ if (reversed == null) { reversed = false; }
 		    var COLOR_TEXT_HOVER = "#00FFFF"; 
 		    var COLOR_BORDER = "rgba(75,85,99,0.5)"; // 0x4B5563
 		
+		    // Danh sách lưu trữ các nút cấp 1 (Root)
+		    var rootItemsList = [];
+		
 		    // =============================================================
 		    // 1. CLASS GIẢ LẬP: MENU ITEM 
 		    // =============================================================
@@ -28749,7 +28752,7 @@ if (reversed == null) { reversed = false; }
 		        // Font chữ chuẩn Roboto/Arial
 		        var tf = new createjs.Text(label, "bold 13px Roboto, Arial, sans-serif", COLOR_TEXT);
 		        tf.x = 18;
-		        tf.lineHeight = 18; // Tương đương leading = 5
+		        tf.lineHeight = 18;
 		
 		        // THUẬT TOÁN ĐO LƯỜNG TEXT (Y hệt AS3)
 		        var rawWidth = tf.getMeasuredWidth() + 50; 
@@ -28788,7 +28791,7 @@ if (reversed == null) { reversed = false; }
 		               .endFill();
 		
 		            if (isHover) {
-		                bg.graphics.setStrokeStyle(1.5).beginStroke("rgba(0,229,255,0.8)"); // 0x00E5FF
+		                bg.graphics.setStrokeStyle(1.5).beginStroke("rgba(0,229,255,0.8)");
 		                bg.graphics.beginLinearGradientFill(["#374151", "#1F2937"], [0, 1], 0, 0, 0, h);
 		                bg.graphics.drawRoundRect(0, 0, w, h, r, r).endFill().endStroke();
 		
@@ -28808,16 +28811,16 @@ if (reversed == null) { reversed = false; }
 		            if (item.subItems.length > 0) {
 		                bg.graphics.beginFill(isHover ? "#00FFFF" : "#9CA3AF");
 		                bg.graphics.moveTo(w - 18, h / 2 - 3)
-		                           .lineTo(w - 14, h / 2)
-		                           .lineTo(w - 18, h / 2 + 3)
-		                           .endFill();
+		                            .lineTo(w - 14, h / 2)
+		                            .lineTo(w - 18, h / 2 + 3)
+		                            .endFill();
 		            }
 		        };
 		
 		        item.updateSize = function(newWidth) {
 		            item.actualWidth = newWidth;
 		            if (!tf.lineWidth && tf.getMeasuredWidth() > newWidth - 40) {
-		                tf.lineWidth = newWidth - 40; // Ép bọc chữ nếu cần
+		                tf.lineWidth = newWidth - 40;
 		            }
 		            item.drawState(false);
 		        };
@@ -28829,7 +28832,7 @@ if (reversed == null) { reversed = false; }
 		            item.repositionSubMenus();
 		        };
 		
-		        // HÀM VẼ TẤM NỀN TRẮNG CHO MENU CẤP 2 (Giống hệt AS3)
+		        // HÀM VẼ TẤM NỀN TRẮNG CHO MENU CẤP 2
 		        item.repositionSubMenus = function() {
 		            if (item.subItems.length === 0) return;
 		            var maxChildWidth = MIN_WIDTH;
@@ -28853,7 +28856,7 @@ if (reversed == null) { reversed = false; }
 		            if (!bgShape) {
 		                bgShape = new createjs.Shape();
 		                bgShape.name = "bgShape";
-		                subMenuContainer.addChildAt(bgShape, 0); // Đẩy xuống dưới cùng
+		                subMenuContainer.addChildAt(bgShape, 0);
 		            }
 		            
 		            bgShape.graphics.clear()
@@ -28877,59 +28880,71 @@ if (reversed == null) { reversed = false; }
 		            if (item.parentItem != null) item.parentItem.closeEntireTree();
 		        };
 		
-		        // --- TƯƠNG TÁC SỰ KIỆN (Dùng rollover/rollout thay vì mouseover) ---
-		        // --- TƯƠNG TÁC SỰ KIỆN (ĐÃ FIX LỖI LIỆT NÚT CANVAS) ---
+		        // =============================================================
+		        // LOGIC TƯƠNG TÁC CHUẨN WEB (HOVER ĐỂ MỞ, CLICK ĐỂ CHỌN)
+		        // =============================================================
+		        
 		        item.on("rollover", function(e) {
 		            item.drawState(true);
 		            tf.color = COLOR_TEXT_HOVER;
-		            if (item.subItems.length > 0) item.toggleSubMenu(true);
+		            
+		            // Nếu có cấp 2: Rê chuột tới đâu tự động mở tới đó
+		            if (item.subItems.length > 0) {
+		                var siblings = (item.parentItem != null) ? item.parentItem.subItems : rootItemsList;
+		                for (var s = 0; s < siblings.length; s++) {
+		                    if (siblings[s] !== item && siblings[s].isSubMenuOpen) {
+		                        siblings[s].toggleSubMenu(false);
+		                    }
+		                }
+		                item.toggleSubMenu(true);
+		            }
 		        });
 		
 		        item.on("rollout", function(e) {
 		            item.drawState(false);
 		            tf.color = COLOR_TEXT;
-		            if (item.subItems.length > 0) item.toggleSubMenu(false);
+		            // Giữ nguyên trạng thái mở để người dùng dịch chuyển chuột sang menu con
 		        });
 		
-		        // 🔥 DÙNG MOUSEDOWN THAY VÌ CLICK ĐỂ CHỐNG TRƯỢT 100% 🔥
-		        item.on("mousedown", function(e) {
-		            e.nativeEvent.stopPropagation();
+		        item.on("click", function(e) {
+		            if (e.nativeEvent) e.nativeEvent.stopPropagation();
 		            e.stopPropagation();
 		
+		            // TRƯỜNG HỢP 1: CÓ CẤP 2 (DANH MỤC CHA)
+		            // Khi click vào (hoặc chạm trên mobile), ép buộc menu hiển thị, TUYỆT ĐỐI KHÔNG ẨN
 		            if (item.subItems.length > 0) {
-		                // Hỗ trợ màn hình cảm ứng: Bấm vào Menu cha sẽ tự bung Menu con
-		                item.toggleSubMenu(!item.isSubMenuOpen);
-		            } else if (item.action !== "") {
-		                console.log("🎯 BẠN VỪA CHỌN BÀI HỌC MÃ LÀ: [" + item.action + "]");
-		                
-		                // Radar dò tìm Engine Kịch Bản (Cực kỳ an toàn)
-		                var engineRoot = (typeof exportRoot !== "undefined") ? exportRoot : _this;
-		                
-		                if (typeof engineRoot.playScenarioWithLog === "function") {
-		                    console.log("🚀 Đang kích hoạt Engine Kịch bản...");
-		                    engineRoot.playScenarioWithLog(item.action);
-		                } else if (typeof engineRoot[item.action] === "function") {
-		                    console.log("🚀 Đang kích hoạt hàm Function lẻ...");
-		                    engineRoot[item.action]();
-		                } else {
-		                    console.error("❌ CHẾT MÁY: Không tìm thấy hàm playScenarioWithLog ở root!");
+		                item.toggleSubMenu(true);
+		                return; // Dừng lại ở đây, không làm gì thêm
+		            } 
+		            // TRƯỜNG HỢP 2: LÀ BÀI HỌC CUỐI (KHÔNG CÓ CẤP 2)
+		            // Thực thi kịch bản bài học và đóng toàn bộ menu
+		            else {
+		                if (item.action !== "") {
+		                    console.log("🎯 BẠN VỪA CHỌN BÀI HỌC MÃ LÀ: [" + item.action + "]");
+		                    
+		                    var engineRoot = (typeof exportRoot !== "undefined") ? exportRoot : _this;
+		                    
+		                    if (typeof engineRoot.playScenarioWithLog === "function") {
+		                        engineRoot.playScenarioWithLog(item.action);
+		                    } else if (typeof engineRoot[item.action] === "function") {
+		                        engineRoot[item.action]();
+		                    } else {
+		                        console.error("❌ LỖI: Không tìm thấy hàm thực thi ở cấp cao nhất!");
+		                    }
 		                }
 		                
-		                // Đóng menu sau khi đã chọn xong
+		                // Đóng menu toàn hệ thống
 		                item.closeEntireTree();
 		                if (window.menuBarRoot) window.menuBarRoot.visible = false; 
-		            } else {
-		                console.warn("⚠️ Nút Menu này bị trống, không có lệnh Action từ Excel!");
 		            }
 		        });
+		
 		        return item;
 		    }
 		
 		    // =============================================================
 		    // 2. HÀM DỰNG MENU TỔNG & VẼ NỀN CẤP 1
 		    // =============================================================
-		    var rootItemsList = [];
-		    
 		    function buildMenu(data, container) {
 		        var maxRootWidth = 0; 
 		        
@@ -28951,7 +28966,6 @@ if (reversed == null) { reversed = false; }
 		            currentY += rItem.actualHeight + ITEM_GAP; 
 		        }
 		
-		        // TỰ ĐỘNG VẼ NỀN TRẮNG CHO MENU CẤP 1
 		        var panelW = maxRootWidth + (PADDING * 2);
 		        var panelH = currentY + PADDING - ITEM_GAP;
 		
@@ -28961,7 +28975,7 @@ if (reversed == null) { reversed = false; }
 		              .drawRoundRect(0, 0, panelW, panelH, 6, 6)
 		              .endFill().endStroke();
 		              
-		        container.addChildAt(bgRoot, 0); // Đẩy tấm nền xuống dưới cùng
+		        container.addChildAt(bgRoot, 0);
 		    }
 		
 		    function parseChildren(childrenData, parentItem) {
@@ -28974,21 +28988,17 @@ if (reversed == null) { reversed = false; }
 		    }
 		
 		    // =============================================================
-		    // 3. KHỞI TẠO CONTANIER (CHƯA VẼ DATA VỘI)
+		    // 3. KHỞI TẠO CONTAINER & LAZY LOAD
 		    // =============================================================
 		    var menuBar = new createjs.Container();
 		    menuBar.name = "menuBar"; 
 		    _this.addChild(menuBar); 
 		    window.menuBarRoot = menuBar; 
 		    
-		    var isMenuBuilt = false; // CỜ ĐÁNH DẤU: Tình trạng chưa vẽ Menu
+		    var isMenuBuilt = false;
 		
-		    // =============================================================
-		    // 4. LOGIC BẬT/TẮT & BƠM DỮ LIỆU ĐỘNG (LAZY LOAD)
-		    // =============================================================
 		    menuBar.visible = false; 
 		
-		    // Dò tìm nút Menu thông minh
 		    var menuBtn = null;
 		    if (typeof resolvePath === "function") {
 		        menuBtn = resolvePath("menuBtn") || resolvePath("btn_menu") || resolvePath("tombol_menu");
@@ -29011,8 +29021,6 @@ if (reversed == null) { reversed = false; }
 		        e.nativeEvent.stopPropagation(); 
 		        e.stopPropagation(); 
 		        
-		        // 🔥 GIẢI PHÁP TỐI THƯỢNG: Chỉ vẽ Menu khi bấm lần đầu tiên
-		        // Lúc này đảm bảo 100% file Python đã nạp xong dữ liệu
 		        if (!isMenuBuilt) {
 		            var sData = window.ScenarioData || (typeof exportRoot !== "undefined" ? exportRoot.ScenarioData : null);
 		            if (sData && sData.menuTree) {
@@ -29027,7 +29035,6 @@ if (reversed == null) { reversed = false; }
 		        menuBar.visible = !menuBar.visible;
 		
 		        if (menuBar.visible) {
-		            // Căn chỉnh tọa độ
 		            var btnBounds = menuBtn.nominalBounds || menuBtn.getBounds();
 		            if (btnBounds) {
 		                var pt = menuBtn.localToGlobal(btnBounds.x + btnBounds.width, btnBounds.y);
@@ -29038,14 +29045,13 @@ if (reversed == null) { reversed = false; }
 		                menuBar.x = menuBtn.x + 50;
 		                menuBar.y = menuBtn.y;
 		            }
-		            
 		            _this.setChildIndex(menuBar, _this.numChildren - 1);
 		        } else {
 		            closeAllSubMenus();
 		        }
 		    }
 		
-		    // CLICK-AWAY: Đóng menu khi click ra ngoài
+		    // CLICK-AWAY: Đóng menu khi click ra ngoài vùng làm việc
 		    if (_this.stage) {
 		        _this.stage.on("stagemousedown", onStageClickToClose);
 		    }
@@ -36776,23 +36782,23 @@ lib.properties = {
 	color: "#FFFFFF",
 	opacity: 1.00,
 	manifest: [
-		{src:"images/Bitmap11a.jpg?1785665080805", id:"Bitmap11a"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_1.png?1785665079769", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_1"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_2.png?1785665079776", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_2"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_3.png?1785665079776", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_3"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_4.png?1785665079777", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_4"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_5.png?1785665079777", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_5"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_6.png?1785665079778", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_6"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_7.png?1785665079778", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_7"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_8.png?1785665079779", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_8"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_9.png?1785665079782", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_9"},
-		{src:"sounds/Sound_CongTacClass.mp3?1785665080805", id:"Sound_CongTacClass"},
-		{src:"sounds/Sound_NoMayClass1.mp3?1785665080805", id:"Sound_NoMayClass1"},
-		{src:"sounds/sound_MoMay_KhoiDongXongClass.mp3?1785665080805", id:"sound_MoMay_KhoiDongXongClass"},
-		{src:"sounds/Sound_NoMayClass.mp3?1785665080805", id:"Sound_NoMayClass"},
-		{src:"https://code.jquery.com/jquery-3.4.1.min.js?1785665080805", id:"lib/jquery-3.4.1.min.js"},
-		{src:"components/sdk/anwidget.js?1785665080805", id:"sdk/anwidget.js"},
-		{src:"components/ui/src/textinput.js?1785665080805", id:"an.TextInput"}
+		{src:"images/Bitmap11a.jpg?1785670906642", id:"Bitmap11a"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_1.png?1785670905818", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_1"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_2.png?1785670905819", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_2"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_3.png?1785670905819", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_3"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_4.png?1785670905819", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_4"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_5.png?1785670905820", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_5"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_6.png?1785670905820", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_6"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_7.png?1785670905821", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_7"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_8.png?1785670905821", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_8"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_9.png?1785670905823", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_9"},
+		{src:"sounds/Sound_CongTacClass.mp3?1785670906642", id:"Sound_CongTacClass"},
+		{src:"sounds/Sound_NoMayClass1.mp3?1785670906642", id:"Sound_NoMayClass1"},
+		{src:"sounds/sound_MoMay_KhoiDongXongClass.mp3?1785670906642", id:"sound_MoMay_KhoiDongXongClass"},
+		{src:"sounds/Sound_NoMayClass.mp3?1785670906642", id:"Sound_NoMayClass"},
+		{src:"https://code.jquery.com/jquery-3.4.1.min.js?1785670906642", id:"lib/jquery-3.4.1.min.js"},
+		{src:"components/sdk/anwidget.js?1785670906642", id:"sdk/anwidget.js"},
+		{src:"components/ui/src/textinput.js?1785670906642", id:"an.TextInput"}
 	],
 	preloads: []
 };
