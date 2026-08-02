@@ -12,8 +12,24 @@
 <meta name="mobile-web-app-capable" content="yes">
 
 <style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000;
+    overflow: hidden;
+  }
+
   #animation_container {
-    position:absolute; margin:auto; left:0;right:0; top:0;bottom:0;
+    position: absolute; 
+    margin: auto; 
+    left: 0; right: 0; top: 0; bottom: 0;
+  }
+  
+  canvas {
+    display: block;
+    touch-action: none;
   }
   
   /* LỚP PHỦ YÊU CẦU CHẠM */
@@ -81,7 +97,7 @@ function playSound(id, loop, offset) {
     return createjs.Sound.play(id, {'interrupt':createjs.Sound.INTERRUPT_EARLY, 'loop': loop, 'offset': offset});}
 </script>
 </head>
-<body onload="init();" style="margin:0px;">
+<body onload="init();">
 
     <!-- LỚP PHỦ YÊU CẦU CHẠM ĐỂ BẮT ĐẦU -->
     <div id="fullscreen-overlay">
@@ -89,8 +105,8 @@ function playSound(id, loop, offset) {
         <button id="start-btn">CHẠM ĐỂ BẮT ĐẦU</button>
     </div>
 
-    <div id="animation_container" style="background-color:rgba(255, 255, 255, 1.00); width:1420px; height:720px">
-        <canvas id="canvas" width="1420" height="720" style="position: absolute; display: block; background-color:rgba(255, 255, 255, 1.00); touch-action: none;"></canvas>
+    <div id="animation_container" style="width:1420px; height:720px">
+        <canvas id="canvas" width="1420" height="720"></canvas>
         <div id="dom_overlay_container" style="pointer-events:none; overflow:hidden; width:1420px; height:720px; position: absolute; left: 0px; top: 0px; display: block;">
         </div>
     </div>
