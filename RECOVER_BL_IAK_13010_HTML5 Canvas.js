@@ -32229,12 +32229,13 @@ if (reversed == null) { reversed = false; }
 		                    tenNutDieuHuong.gotoAndStop(1); // Frame 2 AS3 -> 1 JS
 		                    tenThanhPhan.gotoAndPlay(10);   // Frame 11 AS3 -> 10 JS
 		
-		                    if (isTayDau == true) {
-		                        setTimeout(function() {
-		                            if(tenThanhPhan.rud_left) tenThanhPhan.rud_left.x = 0.05;
-		                            if(tenThanhPhan.rud_right) tenThanhPhan.rud_right.x = 124.2;
-		                        }, 300);
-		                    }
+		                    // ĐÃ FIX: Bỏ ép tọa độ X thủ công để tránh làm lệch tay dầu
+		                    // if (isTayDau == true) {
+		                    //     setTimeout(function() {
+		                    //         if(tenThanhPhan.rud_left) tenThanhPhan.rud_left.x = 0.05;
+		                    //         if(tenThanhPhan.rud_right) tenThanhPhan.rud_right.x = 124.2;
+		                    //     }, 300);
+		                    // }
 		                    
 		                    // test_an_hien_menu: Frame 2 AS3 -> 1 JS
 		                    if ((isTayDau == true) && (_this.test_an_hien_menu && _this.test_an_hien_menu.currentFrame == 1)) {
@@ -32265,10 +32266,11 @@ if (reversed == null) { reversed = false; }
 		                    tenThanhPhan.gotoAndPlay(1);    // Frame 2 AS3 -> 1 JS
 		
 		                    if (isTayDau == true) {
-		                        setTimeout(function() {
-		                            if(tenThanhPhan.rud_left) tenThanhPhan.rud_left.x = -331.10;
-		                            if(tenThanhPhan.rud_right) tenThanhPhan.rud_right.x = -206.9;
-		                        }, 100);
+		                        // ĐÃ FIX: Bỏ ép tọa độ X thủ công khi thu bảng vào
+		                        // setTimeout(function() {
+		                        //     if(tenThanhPhan.rud_left) tenThanhPhan.rud_left.x = -331.10;
+		                        //     if(tenThanhPhan.rud_right) tenThanhPhan.rud_right.x = -206.9;
+		                        // }, 100);
 		                        if(_this.homeBtn) _this.homeBtn.visible = true;
 		                        if(_this.info) _this.info.visible = true;
 		                    }
@@ -32526,6 +32528,7 @@ if (reversed == null) { reversed = false; }
 		        }
 		
 		        // HÀM GẮN SỰ KIỆN KÉO THẢ TƯƠNG THÍCH ĐA NỀN TẢNG
+		        // HÀM GẮN SỰ KIỆN KÉO THẢ TƯƠNG THÍCH ĐA NỀN TẢNG
 		        function setupDraggable(targetMC, isLeftLever) {
 		            if (!targetMC) return;
 		            targetMC.cursor = "pointer";
@@ -32537,9 +32540,6 @@ if (reversed == null) { reversed = false; }
 		                evt.stopPropagation(); 
 		                var pt = this.parent.globalToLocal(evt.stageX, evt.stageY);
 		                this.offsetY = !isNaN(pt.y) ? (this.y - pt.y) : 0;
-		                
-		                // Lấy mốc tọa độ X ban đầu để khóa chặt (Chống vuốt lệch)
-		                this.lockX = isLeftLever ? 0 : this.x; 
 		            });
 		            
 		            targetMC.on("pressmove", function(evt) {
@@ -32549,19 +32549,15 @@ if (reversed == null) { reversed = false; }
 		                
 		                var newY = pt.y + this.offsetY;
 		                
-		                // Ép giới hạn Hành trình tay dầu
+		                // Ép giới hạn Hành trình tay dầu (Lên cao nhất / Xuống thấp nhất)
 		                if (newY > 0) newY = 0;
 		                if (newY < maxH) newY = maxH;
 		                
-		                // Khóa X, chỉ cho trượt Y
-		                if (this.y !== newY || this.x !== this.lockX) {
-		                    this.x = this.lockX; 
-		                    this.y = newY;
-		                }
+		                // CHỈ CẬP NHẬT TRỤC Y, TUYỆT ĐỐI KHÔNG ĐỤNG VÀO TRỤC X
+		                this.y = newY;
 		            });
 		        }
-		
-		        setupDraggable(_this.rud_LeftRight.rud_left, true);
+				setupDraggable(_this.rud_LeftRight.rud_left, true);
 		        setupDraggable(_this.rud_LeftRight.rud_right, false);
 		
 		        // Vòng lặp cập nhật thông số màn hình khi máy chưa nổ
@@ -36524,7 +36520,7 @@ if (reversed == null) { reversed = false; }
 	// do_thi
 	this.nutMoDoThi = new lib.nutMoDoThi();
 	this.nutMoDoThi.name = "nutMoDoThi";
-	this.nutMoDoThi.setTransform(25.25,189.9,0.5918,0.5918,0,0,0,0,0.1);
+	this.nutMoDoThi.setTransform(-63.9,106.75,0.5918,0.5918,0,0,0,0,0.1);
 	new cjs.ButtonHelper(this.nutMoDoThi, 0, 1, 1);
 
 	this.timeline.addTween(cjs.Tween.get(this.nutMoDoThi).wait(1));
@@ -36770,7 +36766,7 @@ if (reversed == null) { reversed = false; }
 	this._renderFirstFrame();
 
 }).prototype = p = new lib.AnMovieClip();
-p.nominalBounds = new cjs.Rectangle(637.7,-152.4,1655.1000000000001,870.6);
+p.nominalBounds = new cjs.Rectangle(631.6,-152.4,1661.2000000000003,870.6);
 // library properties:
 lib.properties = {
 	id: '30B89A14D6F24545AF223DEE9726834E',
@@ -36780,23 +36776,23 @@ lib.properties = {
 	color: "#FFFFFF",
 	opacity: 1.00,
 	manifest: [
-		{src:"images/Bitmap11a.jpg?1785663737326", id:"Bitmap11a"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_1.png?1785663735251", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_1"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_2.png?1785663735252", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_2"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_3.png?1785663735253", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_3"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_4.png?1785663735254", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_4"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_5.png?1785663735255", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_5"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_6.png?1785663735256", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_6"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_7.png?1785663735260", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_7"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_8.png?1785663735261", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_8"},
-		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_9.png?1785663735267", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_9"},
-		{src:"sounds/Sound_CongTacClass.mp3?1785663737326", id:"Sound_CongTacClass"},
-		{src:"sounds/Sound_NoMayClass1.mp3?1785663737326", id:"Sound_NoMayClass1"},
-		{src:"sounds/sound_MoMay_KhoiDongXongClass.mp3?1785663737326", id:"sound_MoMay_KhoiDongXongClass"},
-		{src:"sounds/Sound_NoMayClass.mp3?1785663737326", id:"Sound_NoMayClass"},
-		{src:"https://code.jquery.com/jquery-3.4.1.min.js?1785663737326", id:"lib/jquery-3.4.1.min.js"},
-		{src:"components/sdk/anwidget.js?1785663737326", id:"sdk/anwidget.js"},
-		{src:"components/ui/src/textinput.js?1785663737326", id:"an.TextInput"}
+		{src:"images/Bitmap11a.jpg?1785665080805", id:"Bitmap11a"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_1.png?1785665079769", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_1"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_2.png?1785665079776", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_2"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_3.png?1785665079776", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_3"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_4.png?1785665079777", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_4"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_5.png?1785665079777", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_5"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_6.png?1785665079778", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_6"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_7.png?1785665079778", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_7"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_8.png?1785665079779", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_8"},
+		{src:"images/RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_9.png?1785665079782", id:"RECOVER_BL_IAK_13010_HTML5 Canvas_atlas_9"},
+		{src:"sounds/Sound_CongTacClass.mp3?1785665080805", id:"Sound_CongTacClass"},
+		{src:"sounds/Sound_NoMayClass1.mp3?1785665080805", id:"Sound_NoMayClass1"},
+		{src:"sounds/sound_MoMay_KhoiDongXongClass.mp3?1785665080805", id:"sound_MoMay_KhoiDongXongClass"},
+		{src:"sounds/Sound_NoMayClass.mp3?1785665080805", id:"Sound_NoMayClass"},
+		{src:"https://code.jquery.com/jquery-3.4.1.min.js?1785665080805", id:"lib/jquery-3.4.1.min.js"},
+		{src:"components/sdk/anwidget.js?1785665080805", id:"sdk/anwidget.js"},
+		{src:"components/ui/src/textinput.js?1785665080805", id:"an.TextInput"}
 	],
 	preloads: []
 };

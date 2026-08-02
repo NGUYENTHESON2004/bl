@@ -17,35 +17,69 @@
     padding: 0;
     width: 100%;
     height: 100%;
-    background-color: #FFFFFF; /* Trả về nền trắng */
+    background-color: #FFFFFF;
     overflow: hidden;
   }
 
-  /* Khung chứa tự động căn giữa và co giãn theo hàm của Animate */
+  /* Khung chứa tự động căn giữa */
   #animation_container {
     position: absolute; 
     margin: auto; 
     left: 0; right: 0; top: 0; bottom: 0;
-    background-color: rgba(255, 255, 255, 1.00); /* Trả về nền trắng */
+    background-color: rgba(255, 255, 255, 1.00);
   }
   
   canvas {
     display: block;
     touch-action: none;
-    background-color: rgba(255, 255, 255, 1.00); /* Trả về nền trắng */
+    background-color: rgba(255, 255, 255, 1.00);
   }
   
-  /* LỚP PHỦ YÊU CẦU CHẠM */
+  /* ========================================= */
+  /* HIỆU ỨNG MÀN HÌNH LOADING CHUYÊN NGHIỆP   */
+  /* ========================================= */
+  #loading-screen {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: #1a1a1a; color: #00E5FF;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      z-index: 9999999; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: opacity 0.4s ease; /* Hiệu ứng mờ dần khi tắt */
+  }
+  .loader-ring {
+      width: 60px; height: 60px;
+      border: 5px solid rgba(0, 229, 255, 0.2);
+      border-top: 5px solid #00E5FF;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+  }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .loader-text { 
+      font-size: 18px; font-weight: bold; letter-spacing: 1px; 
+      margin-bottom: 15px; color: #ffffff; 
+  }
+  .loader-bar-bg { 
+      width: 250px; height: 8px; background: #333; 
+      border-radius: 4px; overflow: hidden; 
+  }
+  .loader-bar-fill { 
+      height: 100%; width: 0%; background: #00E5FF; 
+      transition: width 0.1s linear; 
+  }
+
+  /* LỚP PHỦ YÊU CẦU CHẠM (Ẩn đi lúc đầu, chỉ hiện khi load 100%) */
   #fullscreen-overlay {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background-color: rgba(0, 0, 0, 0.9); color: white;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      display: none; /* Khởi tạo ở trạng thái ẨN */
+      flex-direction: column; justify-content: center; align-items: center;
       z-index: 999999; font-family: sans-serif;
   }
   #start-btn {
       padding: 15px 40px; font-size: 20px; font-weight: bold;
       background-color: #00E5FF; color: #000; border: none;
       border-radius: 10px; margin-top: 20px; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 229, 255, 0.4);
   }
 </style>
 
@@ -61,6 +95,14 @@ function init() {
     var lib=comp.getLibrary();
     var loader = new createjs.LoadQueue(false);
     loader.installPlugin(createjs.Sound);
+    
+    // BẮT SỰ KIỆN ĐANG TẢI DỮ LIỆU (%)
+    loader.addEventListener("progress", function(evt) {
+        var percent = Math.round(evt.loaded * 100);
+        document.getElementById("load-percent").innerText = "ĐANG TẢI DỮ LIỆU... " + percent + "%";
+        document.getElementById("load-bar").style.width = percent + "%";
+    });
+
     loader.addEventListener("fileload", function(evt){handleFileLoad(evt,comp)});
     loader.addEventListener("complete", function(evt){handleComplete(evt,comp)});
     var lib=comp.getLibrary();
@@ -82,7 +124,7 @@ function handleComplete(evt,comp) {
     stage = new lib.Stage(canvas);
     stage.enableMouseOver(); 
     
-    // BẬT CẢM ỨNG (KHÔNG CHẶN CLICK CHUỘT)
+    // BẬT CẢM ỨNG
     if(createjs.Touch.isSupported()) {
         createjs.Touch.enable(stage, false, true); 
     }
@@ -93,16 +135,35 @@ function handleComplete(evt,comp) {
         createjs.Ticker.addEventListener("tick", stage);
     }       
     
-    // Hệ thống tự động tính toán tỷ lệ co giãn và ma trận tọa độ chạm
-    AdobeAn.makeResponsive(true,'both',true,1,[canvas,anim_container,dom_overlay_container]);   
+    // Ép giao diện bám sát lề ngang màn hình
+    AdobeAn.makeResponsive(true,'width',true,1,[canvas,anim_container,dom_overlay_container]);   
     AdobeAn.compositionLoaded(lib.properties.id);
     fnStartAnimation();
+    
+    // XỬ LÝ KHI TẢI XONG 100%: Ẩn Loading, Hiện nút "Chạm để bắt đầu"
+    setTimeout(function() {
+        var loadScreen = document.getElementById("loading-screen");
+        loadScreen.style.opacity = "0"; // Mờ dần
+        setTimeout(function() {
+            loadScreen.style.display = "none"; // Ẩn hẳn
+            document.getElementById("fullscreen-overlay").style.display = "flex"; // Hiện nút
+        }, 400); // Đợi 0.4s cho hiệu ứng mờ kết thúc
+    }, 200);
 }
 function playSound(id, loop, offset) {
     return createjs.Sound.play(id, {'interrupt':createjs.Sound.INTERRUPT_EARLY, 'loop': loop, 'offset': offset});}
 </script>
 </head>
 <body onload="init();">
+
+    <!-- MÀN HÌNH LOADING CHUYÊN NGHIỆP -->
+    <div id="loading-screen">
+        <div class="loader-ring"></div>
+        <div id="load-percent" class="loader-text">ĐANG TẢI DỮ LIỆU... 0%</div>
+        <div class="loader-bar-bg">
+            <div id="load-bar" class="loader-bar-fill"></div>
+        </div>
+    </div>
 
     <!-- LỚP PHỦ YÊU CẦU CHẠM ĐỂ BẮT ĐẦU -->
     <div id="fullscreen-overlay">
