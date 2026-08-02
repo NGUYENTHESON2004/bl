@@ -179,13 +179,14 @@ function playSound(id, loop, offset) {
     </div>
 
     <!-- SCRIPT XỬ LÝ KHÓA QUAY NGANG, ẨN MÀN CHỜ VÀ MỞ KHÓA ÂM THANH -->
+    <!-- SCRIPT XỬ LÝ KHÓA QUAY NGANG, ẨN MÀN CHỜ VÀ MỞ KHÓA ÂM THANH -->
     <script>
         var overlay = document.getElementById('fullscreen-overlay');
         var startBtn = document.getElementById('start-btn');
         
         function batDauHoc(e) {
-            // ĐÃ XÓA lệnh e.stopPropagation(); để CreateJS có thể nghe thấy cú chạm này
-
+            e.preventDefault(); // Ngăn trình duyệt di động xử lý click kép gây nhiễu
+            
             var docElm = document.documentElement;
             
             // 1. Kích hoạt Fullscreen
@@ -201,29 +202,45 @@ function playSound(id, loop, offset) {
                 }
             } catch(err) {}
 
-            // 3. MỞ KHÓA HỆ THỐNG ÂM THANH CREATEJS CHUẨN MỰC
+            // 3. MỞ KHÓA ÂM THANH BẰNG RAW WEB AUDIO API (GIẢI PHÁP TRIỆT ĐỂ NHẤT)
             try {
-                if (createjs.WebAudioPlugin && createjs.WebAudioPlugin.context) {
-                    // Đánh thức Context bị ngủ đông trên iOS/Android
-                    if (createjs.WebAudioPlugin.context.state === "suspended") {
-                        createjs.WebAudioPlugin.context.resume();
+                // Hỗ trợ đa trình duyệt
+                var AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    // Lấy lõi âm thanh của CreateJS (hoặc tạo mới nếu chưa có)
+                    var ctx = (createjs.WebAudioPlugin && createjs.WebAudioPlugin.context) 
+                              ? createjs.WebAudioPlugin.context 
+                              : new AudioContext();
+                    
+                    // Ép tỉnh dậy
+                    if (ctx.state === 'suspended') {
+                        ctx.resume();
+                    }
+
+                    // Tự động nặn ra một file âm thanh trống 1 mili-giây
+                    var buffer = ctx.createBuffer(1, 1, 22050);
+                    var source = ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(ctx.destination);
+                    
+                    // Phát ngay lập tức để bẻ khóa hệ thống chặn của iOS/Android
+                    if (source.start) {
+                        source.start(0);
+                    } else if (source.noteOn) {
+                        source.noteOn(0);
                     }
                 }
-                // Ép CreateJS phát một âm thanh rỗng nội bộ để vượt rào bảo mật
-                if (createjs.WebAudioPlugin && createjs.WebAudioPlugin.playEmptySound) {
-                    createjs.WebAudioPlugin.playEmptySound();
-                }
             } catch(err) {
-                console.warn("Lỗi mở khóa âm thanh: ", err);
+                console.warn("Lỗi bẻ khóa âm thanh: ", err);
             }
             
             // 4. Ẩn màn hình chờ
             overlay.style.display = 'none';
         }
 
-        // Bắt cả sự kiện CLICK (trên máy tính) và TOUCHEND (trên di động) để đảm bảo 100% ăn lệnh
+        // Bắt sự kiện TOUCHSTART (Nhạy nhất trên iOS) và CLICK (Cho máy tính/Android)
+        startBtn.addEventListener('touchstart', batDauHoc, {passive: false});
         startBtn.addEventListener('click', batDauHoc);
-        startBtn.addEventListener('touchend', batDauHoc);
     </script>
 </body>
 </html>
