@@ -15,21 +15,24 @@
   html, body {
     margin: 0;
     padding: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: #000000;
+    width: 100%;
+    height: 100%;
+    background-color: #FFFFFF; /* Trả về nền trắng */
     overflow: hidden;
   }
 
+  /* Khung chứa tự động căn giữa và co giãn theo hàm của Animate */
   #animation_container {
     position: absolute; 
     margin: auto; 
     left: 0; right: 0; top: 0; bottom: 0;
+    background-color: rgba(255, 255, 255, 1.00); /* Trả về nền trắng */
   }
   
   canvas {
     display: block;
     touch-action: none;
+    background-color: rgba(255, 255, 255, 1.00); /* Trả về nền trắng */
   }
   
   /* LỚP PHỦ YÊU CẦU CHẠM */
@@ -89,6 +92,8 @@ function handleComplete(evt,comp) {
         createjs.Ticker.framerate = lib.properties.fps;
         createjs.Ticker.addEventListener("tick", stage);
     }       
+    
+    // Hệ thống tự động tính toán tỷ lệ co giãn và ma trận tọa độ chạm
     AdobeAn.makeResponsive(true,'both',true,1,[canvas,anim_container,dom_overlay_container]);   
     AdobeAn.compositionLoaded(lib.properties.id);
     fnStartAnimation();
@@ -105,6 +110,7 @@ function playSound(id, loop, offset) {
         <button id="start-btn">CHẠM ĐỂ BẮT ĐẦU</button>
     </div>
 
+    <!-- Khung chứa giao diện phần mềm -->
     <div id="animation_container" style="width:1420px; height:720px">
         <canvas id="canvas" width="1420" height="720"></canvas>
         <div id="dom_overlay_container" style="pointer-events:none; overflow:hidden; width:1420px; height:720px; position: absolute; left: 0px; top: 0px; display: block;">
