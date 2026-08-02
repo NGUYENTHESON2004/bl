@@ -179,6 +179,7 @@ function playSound(id, loop, offset) {
     </div>
 
     <!-- SCRIPT XỬ LÝ KHÓA QUAY NGANG VÀ ẨN MÀN CHỜ -->
+    <!-- SCRIPT XỬ LÝ KHÓA QUAY NGANG, ẨN MÀN CHỜ VÀ MỞ KHÓA ÂM THANH -->
     <script>
         var overlay = document.getElementById('fullscreen-overlay');
         var startBtn = document.getElementById('start-btn');
@@ -187,17 +188,36 @@ function playSound(id, loop, offset) {
             e.stopPropagation(); 
             var docElm = document.documentElement;
             
+            // 1. Kích hoạt Fullscreen
             try {
                 if (docElm.requestFullscreen) docElm.requestFullscreen();
                 else if (docElm.webkitRequestFullScreen) docElm.webkitRequestFullScreen();
             } catch(err) {}
             
+            // 2. Khóa xoay màn hình ngang
             try {
                 if (screen.orientation && screen.orientation.lock) {
                     screen.orientation.lock('landscape').catch(function(err) {});
                 }
             } catch(err) {}
+
+            // 3. MỞ KHÓA HỆ THỐNG ÂM THANH (VƯỢT RÀO BẢO MẬT TRÌNH DUYỆT DI ĐỘNG)
+            try {
+                // Đánh thức Web Audio API
+                if (createjs.WebAudioPlugin && createjs.WebAudioPlugin.context) {
+                    if (createjs.WebAudioPlugin.context.state === "suspended") {
+                        createjs.WebAudioPlugin.context.resume();
+                    }
+                }
+                // Phát mồi một luồng âm thanh rỗng để ép iOS/Android mở khóa hoàn toàn
+                var unlockSound = createjs.Sound.play(""); 
+                unlockSound.volume = 0;
+                unlockSound.stop();
+            } catch(err) {
+                console.warn("Lỗi mở khóa âm thanh: ", err);
+            }
             
+            // 4. Ẩn màn hình chờ
             overlay.style.display = 'none';
         }
 
