@@ -178,14 +178,14 @@ function playSound(id, loop, offset) {
         </div>
     </div>
 
-    <!-- SCRIPT XỬ LÝ KHÓA QUAY NGANG VÀ ẨN MÀN CHỜ -->
     <!-- SCRIPT XỬ LÝ KHÓA QUAY NGANG, ẨN MÀN CHỜ VÀ MỞ KHÓA ÂM THANH -->
     <script>
         var overlay = document.getElementById('fullscreen-overlay');
         var startBtn = document.getElementById('start-btn');
         
         function batDauHoc(e) {
-            e.stopPropagation(); 
+            // ĐÃ XÓA lệnh e.stopPropagation(); để CreateJS có thể nghe thấy cú chạm này
+
             var docElm = document.documentElement;
             
             // 1. Kích hoạt Fullscreen
@@ -201,18 +201,18 @@ function playSound(id, loop, offset) {
                 }
             } catch(err) {}
 
-            // 3. MỞ KHÓA HỆ THỐNG ÂM THANH (VƯỢT RÀO BẢO MẬT TRÌNH DUYỆT DI ĐỘNG)
+            // 3. MỞ KHÓA HỆ THỐNG ÂM THANH CREATEJS CHUẨN MỰC
             try {
-                // Đánh thức Web Audio API
                 if (createjs.WebAudioPlugin && createjs.WebAudioPlugin.context) {
+                    // Đánh thức Context bị ngủ đông trên iOS/Android
                     if (createjs.WebAudioPlugin.context.state === "suspended") {
                         createjs.WebAudioPlugin.context.resume();
                     }
                 }
-                // Phát mồi một luồng âm thanh rỗng để ép iOS/Android mở khóa hoàn toàn
-                var unlockSound = createjs.Sound.play(""); 
-                unlockSound.volume = 0;
-                unlockSound.stop();
+                // Ép CreateJS phát một âm thanh rỗng nội bộ để vượt rào bảo mật
+                if (createjs.WebAudioPlugin && createjs.WebAudioPlugin.playEmptySound) {
+                    createjs.WebAudioPlugin.playEmptySound();
+                }
             } catch(err) {
                 console.warn("Lỗi mở khóa âm thanh: ", err);
             }
@@ -221,7 +221,9 @@ function playSound(id, loop, offset) {
             overlay.style.display = 'none';
         }
 
+        // Bắt cả sự kiện CLICK (trên máy tính) và TOUCHEND (trên di động) để đảm bảo 100% ăn lệnh
         startBtn.addEventListener('click', batDauHoc);
+        startBtn.addEventListener('touchend', batDauHoc);
     </script>
 </body>
 </html>
