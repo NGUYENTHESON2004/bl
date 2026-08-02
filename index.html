@@ -180,13 +180,13 @@ function playSound(id, loop, offset) {
 
     <!-- SCRIPT XỬ LÝ KHÓA QUAY NGANG, ẨN MÀN CHỜ VÀ MỞ KHÓA ÂM THANH -->
     <!-- SCRIPT XỬ LÝ KHÓA QUAY NGANG, ẨN MÀN CHỜ VÀ MỞ KHÓA ÂM THANH -->
+    <!-- SCRIPT XỬ LÝ KHÓA QUAY NGANG, ẨN MÀN CHỜ VÀ MỞ KHÓA ÂM THANH -->
     <script>
         var overlay = document.getElementById('fullscreen-overlay');
         var startBtn = document.getElementById('start-btn');
         
         function batDauHoc(e) {
-            e.preventDefault(); // Ngăn trình duyệt di động xử lý click kép gây nhiễu
-            
+            e.preventDefault(); 
             var docElm = document.documentElement;
             
             // 1. Kích hoạt Fullscreen
@@ -202,33 +202,36 @@ function playSound(id, loop, offset) {
                 }
             } catch(err) {}
 
-            // 3. MỞ KHÓA ÂM THANH BẰNG RAW WEB AUDIO API (GIẢI PHÁP TRIỆT ĐỂ NHẤT)
+            // 3. CHIẾN THUẬT "SILENT LOOP" (NHẠC NỀN ẢO) ĐỂ GIỮ KÊNH ÂM THANH MỞ VĨNH VIỄN
             try {
-                // Hỗ trợ đa trình duyệt
                 var AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (AudioContext) {
-                    // Lấy lõi âm thanh của CreateJS (hoặc tạo mới nếu chưa có)
+                    // Lấy lõi Audio của phần mềm
                     var ctx = (createjs.WebAudioPlugin && createjs.WebAudioPlugin.context) 
                               ? createjs.WebAudioPlugin.context 
                               : new AudioContext();
                     
-                    // Ép tỉnh dậy
-                    if (ctx.state === 'suspended') {
-                        ctx.resume();
-                    }
+                    if (ctx.state === 'suspended') ctx.resume();
 
-                    // Tự động nặn ra một file âm thanh trống 1 mili-giây
-                    var buffer = ctx.createBuffer(1, 1, 22050);
-                    var source = ctx.createBufferSource();
-                    source.buffer = buffer;
-                    source.connect(ctx.destination);
+                    // Tự động tạo một sóng âm thanh (Oscillator) chạy nền
+                    var oscillator = ctx.createOscillator();
+                    var gainNode = ctx.createGain();
                     
-                    // Phát ngay lập tức để bẻ khóa hệ thống chặn của iOS/Android
-                    if (source.start) {
-                        source.start(0);
-                    } else if (source.noteOn) {
-                        source.noteOn(0);
-                    }
+                    // Ép âm lượng về 0 (Im lặng tuyệt đối, không gây tiếng xèo xèo)
+                    gainNode.gain.value = 0; 
+                    
+                    // Nối sóng âm vào màng loa thiết bị
+                    oscillator.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    
+                    // Cho phát liên tục không ngừng nghỉ
+                    oscillator.start(0);
+
+                    // LỚP BẢO VỆ SỐ 2: 
+                    // Cứ mỗi lần học viên chạm tay vào BẤT KỲ ĐÂU trên màn hình, ép tỉnh dậy nếu bị OS ép ngủ
+                    document.addEventListener('touchstart', function() {
+                        if (ctx.state === 'suspended') ctx.resume();
+                    }, {passive: true});
                 }
             } catch(err) {
                 console.warn("Lỗi bẻ khóa âm thanh: ", err);
