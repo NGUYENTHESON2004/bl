@@ -151,6 +151,7 @@ function handleComplete(evt,comp) {
     AdobeAn.makeResponsive(true,'width',true,1,[canvas,anim_container,dom_overlay_container]);   
     AdobeAn.compositionLoaded(lib.properties.id);
     fnStartAnimation();
+    autoExpandSmallButtons(exportRoot);
     
     // XỬ LÝ KHI TẢI XONG 100%: Ẩn Loading, Hiện nút "Chạm để bắt đầu"
     setTimeout(function() {
@@ -161,6 +162,74 @@ function handleComplete(evt,comp) {
             document.getElementById("fullscreen-overlay").style.display = "flex"; // Hiện nút
         }, 400); // Đợi 0.4s cho hiệu ứng mờ kết thúc
     }, 200);
+}
+function autoExpandSmallButtons(rootContainer) {
+    // 1. ĐO ĐẠC TỶ LỆ CO NGÓT
+    var canvasEl = document.getElementById("canvas");
+    var scaleRatio = 1;
+    if (canvasEl && canvasEl.clientWidth > 0) {
+        scaleRatio = canvasEl.width / canvasEl.clientWidth; 
+    }
+
+    var MIN_SAFE_SIZE = 70 * scaleRatio; 
+    var PADDING = 25 * scaleRatio;       
+
+    function scanNode(node) {
+        if (!node || !node.visible) return;
+
+        var hasValidName = (node.name && typeof node.name === "string" && node.name.indexOf("instance") !== 0);
+        var hasEventOrPointer = (node.cursor === "pointer" || node.hasEventListener("mousedown") || node.hasEventListener("click"));
+
+        // 🚀 BẢO VỆ CHỐNG LẶP: Đảm bảo chưa từng được bọc khiên (!node.__hasShield)
+        if ((hasValidName || hasEventOrPointer) && node.addChildAt && !node.__hasShield) {
+            
+            // 🚀 BÍ KÍP TRỊ ĐƠ MÁY NẰM Ở ĐÂY: LUÔN DÙNG nominalBounds TRƯỚC!
+            // Dữ liệu này được Animate đo sẵn, lấy ra dùng ngay mà không tốn CPU.
+            var b = node.nominalBounds; 
+            
+            // Chỉ khi nào Animate không cấp sẵn, ta mới cắn răng dùng getBounds()
+            if (!b) {
+                b = node.getBounds();
+            }
+
+            if (b && b.width > 0) {
+                var hitBox = new createjs.Shape();
+                
+                var hitW = b.width + PADDING * 2;
+                var hitH = b.height + PADDING * 2;
+                
+                var finalW = Math.max(hitW, MIN_SAFE_SIZE);
+                var finalH = Math.max(hitH, MIN_SAFE_SIZE);
+
+                var hitX = b.x - (finalW - b.width) / 2;
+                var hitY = b.y - (finalH - b.height) / 2;
+
+                // Vẽ lớp áo giáp 
+                hitBox.graphics.beginFill("#000000").drawRect(hitX, hitY, finalW, finalH);
+                
+                hitBox.alpha = 0.01; 
+                hitBox.name = "invisible_shield"; 
+                
+                node.addChildAt(hitBox, 0); 
+                node.cursor = "pointer"; 
+                
+                // 🚀 ĐÁNH DẤU LẠI: Nút này đã có giáp, sau này quét lại cấm không được thêm nữa
+                node.__hasShield = true;
+            }
+        }
+
+        // Lặp ngược đệ quy an toàn
+        if (node.children && node.numChildren > 0) {
+            for (var i = node.numChildren - 1; i >= 0; i--) {
+                var child = node.getChildAt(i);
+                if (child.name !== "invisible_shield") { 
+                    scanNode(child);
+                }
+            }
+        }
+    }
+
+    scanNode(rootContainer);
 }
 function playSound(id, loop, offset) {
     return createjs.Sound.play(id, {'interrupt':createjs.Sound.INTERRUPT_EARLY, 'loop': loop, 'offset': offset});}
