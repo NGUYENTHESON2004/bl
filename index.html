@@ -38,6 +38,9 @@
     display: block;
     touch-action: none;
     background-color: rgba(255, 255, 255, 1.00);
+    /* 🚀 Bổ sung 2 dòng dưới để chống chớp nháy khi chạm */
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
   }
   
   /* ========================================= */
@@ -129,17 +132,21 @@ function handleComplete(evt,comp) {
     stage = new lib.Stage(canvas);
     stage.enableMouseOver(); 
     
-    // BẬT CẢM ỨNG
+    // BẬT CẢM ỨNG (Tối ưu chặn cuộn trang)
     if(createjs.Touch.isSupported()) {
-        createjs.Touch.enable(stage, false, true); 
+        createjs.Touch.enable(stage, true, false); 
     }
 
     fnStartAnimation = function() {
         stage.addChild(exportRoot);
+        
+        // 🚀 KÍCH HOẠT GPU RENDER (Cực kỳ quan trọng để chống giật trên Mobile)
+        createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED; 
         createjs.Ticker.framerate = lib.properties.fps;
+        
         createjs.Ticker.addEventListener("tick", stage);
-    }       
-    
+    }
+
     // Ép giao diện bám sát lề ngang màn hình
     AdobeAn.makeResponsive(true,'width',true,1,[canvas,anim_container,dom_overlay_container]);   
     AdobeAn.compositionLoaded(lib.properties.id);
